@@ -1,0 +1,195 @@
+<template>
+  <div
+    class="xg-main help-type-page"
+    v-loading="isListLoading">
+    <div class="main-header">
+      <el-button
+        v-if="$tools.checkAdminPower('help', 'addType')"
+        size="medium"
+        type="primary"
+        @click="add">添加分类</el-button>
+    </div>
+    <div
+      v-show="list.length > 0"
+      class="xg-type__list">
+      <el-table
+        ref="typeTable"
+        :data="list"
+        >
+         <el-table-column
+          prop="id"
+          label="ID">
+        </el-table-column>
+        <el-table-column
+          prop="name"
+          label="分类名">
+        </el-table-column>
+        <el-table-column
+          prop="created_at"
+          key="created_at"
+          label="创建时间">
+          <template slot-scope="scope">
+            {{scope.row.created_at | transLocalTime}}
+          </template>
+        </el-table-column>
+        <el-table-column
+          prop="updated_at"
+          key="updated_at"
+          show-overflow-tooltip
+          label="更新时间">
+          <template slot-scope="scope">
+            {{scope.row.updated_at | transLocalTime}}
+          </template>
+        </el-table-column>
+        <el-table-column
+          width="80px"
+          label="操作">
+          <template slot-scope="scope">
+              <el-dropdown
+                trigger="click"
+                placement="bottom">
+                <span class="el-dropdown-link">
+                  <span class="icon iconfont icon-ellipsis"></span>
+                </span>
+                <el-dropdown-menu
+                  slot="dropdown"
+                  class="xg-popover-list">
+                  <el-dropdown-item
+                    v-if="$tools.checkAdminPower('help', 'editType')"
+                    class="xg-popover-list__item"
+                    @click.native="edit(scope.row)">
+                    <span class="icon iconfont icon-edit-square"></span>
+                    编辑
+                  </el-dropdown-item>
+                  <el-dropdown-item
+                    v-if="$tools.checkAdminPower('help', 'deleteType')"
+                    class="xg-popover-list__item"
+                    @click.native="removeType(scope.row.id)">
+                    <span class="icon iconfont icon-delete"></span>
+                    删除
+                  </el-dropdown-item>
+                </el-dropdown-menu>
+              </el-dropdown>
+          </template>
+        </el-table-column>
+      </el-table>
+    </div>
+    <el-dialog :title="isEdit ? '编辑分类': '添加分类'" :visible.sync="dialogFormVisible">
+      <el-form ref="form" :model="form" :rules="rules" style="max-width:500px" label-width="120px">
+        <el-form-item label="分类名" prop="name">
+          <el-input v-model="form.name" autocomplete="off"></el-input>
+        </el-form-item>
+      </el-form>
+      <div slot="footer" class="dialog-footer">
+        <el-button size="medium" @click="dialogFormVisible = false">取 消</el-button>
+        <el-button size="medium" type="primary" @click="submit">确 定</el-button>
+      </div>
+    </el-dialog>
+    <!-- 列表为空时 -->
+    <no-record v-if="showNoRecord"/>
+  </div>
+</template>
+<script>
+import CheckForm from '@/mixins/checkform';
+import HelpProxy from '@/proxies/help';
+
+export default {
+  name: 'type-list',
+  data() {
+    return {
+      form: {
+        name: '',
+      },
+      dialogFormVisible: false,
+      isEdit: false,
+      // 列表
+      list: [],
+      isListLoading: false,
+      rules: {
+        name: [
+          { required: true, message: '请输入分类名', trigger: 'change' },
+        ],
+      },
+    };
+  },
+  mixins: [
+    // 表单校验
+    CheckForm,
+  ],
+  computed: {
+    showNoRecord() {
+      // 列表为空，且不是正在加载中
+      return this.list.length < 1 && !this.isListLoading;
+    },
+  },
+  methods: {
+    showDialog() {
+      this.dialogFormVisible = true;
+    },
+    add() {
+      this.isEdit = false;
+      this.form = {};
+      this.showDialog();
+    },
+    edit(data) {
+      this.showDialog();
+      this.isEdit = true;
+      this.form.name = data.name;
+      this.form.id = data.id;
+    },
+    // 获取列表
+    async getTypeList() {
+      this.isListLoading = true;
+      const res = await HelpProxy.typeList();
+      setTimeout(() => {
+        this.isListLoading = false;
+      }, 600);
+      if (res.success) {
+        this.list = res.data;
+      }
+    },
+    async submit() {
+      // 未通过校验
+      if (!this.CheckForm('form')) {
+        return;
+      }
+      const res = await HelpProxy[this.isEdit ? 'updateType' : 'addType'](this.form);
+      if (!res.fail) {
+        this.$notify.success({
+          title: '成功',
+          message: res.message,
+        });
+        // 刷新列表
+        this.getTypeList();
+        this.dialogFormVisible = false;
+        this.isEdit = false;
+      }
+    },
+    async removeType(id) {
+      const params = {
+        id,
+      };
+      const res = await HelpProxy.removeType(params);
+      if (!res.fail) {
+        this.$notify.success({
+          title: '成功',
+          message: res.message,
+        });
+        // 刷新列表
+        this.getTypeList();
+        this.dialogFormVisible = false;
+      }
+    },
+  },
+  created() {
+    this.getTypeList();
+  },
+};
+</script>
+<style lang="scss">
+.help-type-page {
+  .main-header {
+    margin: 20px 0;
+  }
+}
+</style>

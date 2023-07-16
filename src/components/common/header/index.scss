@@ -1,0 +1,45 @@
+@include b(header) {
+  position: fixed;
+  overflow-x: auto;
+  width: 100%;
+  z-index: 999;
+  top: 0;
+  height:60px;
+  line-height: 60px;
+  font-size: 12px;
+  background:rgba(255,255,255,1);
+  box-shadow:0px 2px 6px 0px rgba(229,229,229,0.5);
+  .content {
+    margin: 0 20px;
+    white-space: nowrap;
+    display: flex;
+    justify-content: space-between;
+  }
+  @include clear;
+
+  @include m(right) {
+    display: flex;
+  }
+
+  @include e(personal) {
+    margin-left: 30px;
+    color: #666;
+    cursor: pointer;
+  }
+}
+
+@include b(logo) {
+  float: left;
+  height: 60px;
+  font-weight: 400;
+  margin: 0;
+  display: flex;
+  align-items: center;
+  img {
+    max-height: 36px;
+    margin-right: 5px;
+  }
+  .icon {
+    font-size: 20px;
+  }
+}
